@@ -316,6 +316,8 @@ endif (RECOIL_DETAILED_TRACY_ZONING)
 #  So req. checks are done in the build target's CMakeLists.txt.
 find_package(SDL2 MODULE)
 
+string(APPEND CMAKE_PREFIX_PATH "/opt/homebrew")
+message("CMAKE_PREFIX_PATH=${CMAKE_PREFIX_PATH}")
 find_package_static(DevIL 1.8.0 REQUIRED)
 
 if    (WIN32)

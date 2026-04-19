@@ -3,6 +3,7 @@
 #ifndef SAFE_UTIL_H
 #define SAFE_UTIL_H
 
+#include <type_traits>
 #include <limits>
 #include <cstring>
 
