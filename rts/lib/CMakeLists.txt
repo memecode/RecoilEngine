@@ -108,7 +108,7 @@ foreach(var ASSIMP_BUILD_STATIC_LIB ASSIMP_NO_EXPORT)
 	set("${var}" ON CACHE STRING "forced by Recoil build env" FORCE)
 endforeach()
 
-ADD_SUBDIRECTORY(assimp)
+add_subdirectory(assimp)
 target_compile_definitions(assimp PRIVATE -DASSIMP_BUILD_NO_OWN_ZLIB)
 
 # simdjson, a fastgltf dependency (manually added to submodules to work around the build system limitations)
@@ -125,16 +125,16 @@ endif()
 
 set(SIMDJSON_ENABLE_THREADS     OFF CACHE BOOL "forced by Recoil build env" FORCE)
 set(SIMDJSON_EXCEPTIONS     ON CACHE BOOL "forced by Recoil build env" FORCE)
-ADD_SUBDIRECTORY(simdjson)
+add_subdirectory(simdjson)
 
 # fastgltf
 set(FASTGLTF_COMPILE_AS_CPP20 ON CACHE BOOL "forced by Recoil build env" FORCE)
 set(FASTGLTF_USE_64BIT_FLOAT OFF CACHE BOOL "forced by Recoil build env" FORCE)
 set(FASTGLTF_USE_CUSTOM_SMALLVECTOR OFF CACHE BOOL "forced by Recoil build env" FORCE)
-ADD_SUBDIRECTORY(fastgltf)
+add_subdirectory(fastgltf)
 
-ADD_SUBDIRECTORY(squish)
-ADD_SUBDIRECTORY(rg-etc1)
+add_subdirectory(squish)
+add_subdirectory(rg-etc1)
 
 option(TRACY_ENABLE "Enable tracy profiling" OFF)
 

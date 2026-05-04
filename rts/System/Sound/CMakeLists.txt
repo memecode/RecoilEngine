@@ -45,7 +45,6 @@ if    (NOT NO_SOUND)
 
 	if (APPLE)
 		get_filename_component(ROOT_PATH "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
-		message("ROOT_PATH=${ROOT_PATH}")
 		add_subdirectory(${ROOT_PATH}/openal-soft openal_dir)
 		include_directories(${ROOT_PATH}/MGL/MGL/include)
 	else()

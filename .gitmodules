@@ -32,7 +32,7 @@
 	url = https://github.com/sammycage/lunasvg.git
 [submodule "rts/lib/fastgltf"]
 	path = rts/lib/fastgltf
-	url = https://github.com/spnda/fastgltf
+	url = https://github.com/memecode/fastgltf.git
 [submodule "rts/lib/simdjson"]
 	path = rts/lib/simdjson
 	url = https://github.com/memecode/simdjson.git
