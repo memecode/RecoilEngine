@@ -408,7 +408,7 @@
 	#else
 		#define SOL_NIL_I_ SOL_ON
 	#endif
-#elif defined(__MAC_OS_X_VERSION_MAX_ALLOWED) || defined(__OBJC__) || defined(nil)
+#elif defined(__OBJC__) || defined(nil)
 	#define SOL_NIL_I_ SOL_DEFAULT_OFF
 #else
 	#define SOL_NIL_I_ SOL_DEFAULT_ON

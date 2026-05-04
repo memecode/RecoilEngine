@@ -13,6 +13,13 @@
 #include "System/UnorderedSet.hpp"
 #include "System/type2.h"
 
+#if __APPLE__
+#include <SDL_metal.h>
+#include "GL/glcorearb.h"
+#include "MGLContext.h"
+#include "MGLRenderer.h"
+#endif
+
 class SharedLib;
 struct SDL_version;
 struct SDL_Rect;
@@ -46,7 +53,11 @@ public:
 	SDL_Window* CreateSDLWindow(const char* title) const;
 	SDL_GLContext CreateGLContext(const int2& minCtx);
 	SDL_Window* GetWindow() { return sdlWindow; }
+	#ifdef __APPLE__
+	SDL_MetalView GetContext() { return metalView; }
+	#else
 	SDL_GLContext GetContext() { return glContext; }
+	#endif
 
 	void DestroyWindowAndContext();
 	void KillSDL() const;
@@ -381,8 +392,13 @@ public:
 		void* DwmFlush = nullptr;
 	#endif
 public:
-	SDL_Window* sdlWindow;
+	SDL_Window* sdlWindow = nullptr;
+#if __APPLE__
+	SDL_MetalView metalView;
+	GLMContext glmCtx = nullptr;
+#else
 	SDL_GLContext glContext;
+#endif
 public:
 	/**
 	* @brief maximum texture unit number

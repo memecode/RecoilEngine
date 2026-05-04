@@ -1,4 +1,5 @@
 /* This file is part of the Spring engine (GPL v2 or later), see LICENSE.html */
+#include <ranges>
 
 #include "UnitDef.h"
 #include "Unit.h"
@@ -964,12 +965,23 @@ static auto SplitResourcePackIntoPositiveNegative (const SResourcePack &pack)
 {
 	SResourcePack positive {0.0f}, negative {0.0f};
 
-	for (auto [resourceID, value] : std::views::enumerate (pack)) {
-		if (value < 0.0f)
-			negative[resourceID] = -value;
-		else
-			positive[resourceID] = value;
-	}
+	#if __APPLE__
+		for (int resourceID = 0; resourceID < 2; resourceID++)
+		{
+			auto value = pack[resourceID];
+			if (value < 0.0f)
+				negative[resourceID] = -value;
+			else
+				positive[resourceID] = value;
+		}
+	#else
+		for (auto [resourceID, value] : std::views::enumerate (pack)) {
+			if (value < 0.0f)
+				negative[resourceID] = -value;
+			else
+				positive[resourceID] = value;
+		}
+	#endif
 
 	return std::make_pair (positive, negative);
 }

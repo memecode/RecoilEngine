@@ -15,7 +15,7 @@ class CVertexArray;
 class CGroundFlash : public CExpGenSpawnable
 {
 public:
-	CR_DECLARE(CGroundFlash)
+	CR_DECLARE_DERIVED(CGroundFlash)
 
 	CGroundFlash(const float3& _pos);
 	CGroundFlash();

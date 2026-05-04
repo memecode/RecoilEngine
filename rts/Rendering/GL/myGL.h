@@ -9,7 +9,11 @@
 
 #include <array>
 
-#include <glad/glad.h>
+#if __APPLE__
+	#include <GL/bar_glue.h>
+#else
+	#include <glad/glad.h>
+#endif
 
 #include "System/float3.h"
 #include "System/float4.h"

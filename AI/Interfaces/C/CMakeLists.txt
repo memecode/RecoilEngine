@@ -14,6 +14,11 @@
 # Native Skirmish AI configuration macro
 # This will be called from native AIs at AI/Skirmish/*/CMakeLists.txt.
 macro    (configure_native_skirmish_ai mySourceDirRel_var additionalSources_var additionalCompileFlags_var additionalLibraries_var)
+	message("configure_native_skirmish_ai")
+	#message("	mySourceDirRel_var=${${mySourceDirRel_var}}")
+	#message("	additionalSources_var=${${additionalSources_var}}")
+	#message("	additionalCompileFlags_var=${${additionalCompileFlags_var}}")
+	#message("	additionalLibraries_var=${${additionalLibraries_var}}")
 	set(myDir                  "${CMAKE_CURRENT_SOURCE_DIR}")
 	get_last_path_part(dirName ${myDir})
 	set(myName                 "${dirName}")
@@ -43,6 +48,18 @@ macro    (configure_native_skirmish_ai mySourceDirRel_var additionalSources_var 
 
 		# Create a list of all the AIs own source files
 		get_native_sources_recursive(mySources "${mySourceDir}" "${myDir}")
+		message("	myDir=${myDir}")
+		message("	mySourceDir=${mySourceDir}")
+		message("	myTarget=${myTarget}")
+		message("	mySources=")
+		foreach(src ${mySources})
+			message("		${src}")
+		endforeach()
+		message("	additionalSources=")
+		foreach(src ${additionalSources})
+			message("		${src}")
+		endforeach()
+		message("	myVersionDepFile=${myVersionDepFile}")
 
 		# Compile the library
 		add_library(${myTarget} MODULE ${mySources} ${additionalSources} ${myVersionDepFile})

@@ -11,20 +11,20 @@
 #include <cstdint>
 #include <functional>
 
-#ifndef _WIN32
-	#include <sys/syscall.h>
-	#include <linux/futex.h>
-#endif
-
 #ifdef _WIN32
 	#include <windows.h>
+#elif defined(__APPLE__)
+#else
+	#define LINUX 1
+	#include <sys/syscall.h>
+	#include <linux/futex.h>
 #endif
 
 #include <catch_amalgamated.hpp>
 
 InitSpringTime ist;
 
-#ifndef _WIN32
+#if LINUX
 	typedef uint32_t futex;
 
 	static void futex_init(futex* m)
@@ -56,7 +56,6 @@ InitSpringTime ist;
 		}
 	}
 #endif
-
 
 
 typedef std::function<void()> voidFnc;
@@ -96,7 +95,7 @@ TEST_CASE("Mutex")
 	spring_time tSRMtx = Test("std::recursive_mutex", [&]{ srmtx.lock(); }, [&]{ srmtx.unlock(); });
 #endif
 
-#ifndef _WIN32
+#if LINUX
 	futex ftx;
 	futex_init(&ftx);
 	spring_time tCrit = Test("futex", [&]{ futex_lock(&ftx); }, [&]{ futex_unlock(&ftx); });

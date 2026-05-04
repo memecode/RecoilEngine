@@ -38,7 +38,10 @@ bool VBO::IsSupported() const
 bool VBO::IsSupported(GLenum target) {
 	static bool isRangeMappingSupported = GLAD_GL_ARB_map_buffer_range;
 	if (!isRangeMappingSupported) //TODO glBufferSubData() fallback ?
+	{
+		printf("%s:%i - Error: isRangeMappingSupported=%i\n", __FILE__, __LINE__, isRangeMappingSupported);
 		return false;
+	}
 
 	static bool isPBOSupported  = (GLAD_GL_EXT_pixel_buffer_object);
 	static bool isVBOSupported  = (GLAD_GL_ARB_vertex_buffer_object);
@@ -54,6 +57,8 @@ bool VBO::IsSupported(GLenum target) {
 	case GL_ELEMENT_ARRAY_BUFFER:
 		return isVBOSupported;
 	case GL_UNIFORM_BUFFER:
+		if (!isUBOSupported)
+			printf("%s:%i - Error: isUBOSupported=%i\n", __FILE__, __LINE__, isUBOSupported);
 		return isUBOSupported;
 	case GL_SHADER_STORAGE_BUFFER:
 		return isSSBOSupported;

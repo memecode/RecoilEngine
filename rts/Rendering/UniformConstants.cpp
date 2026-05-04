@@ -109,6 +109,7 @@ CR_REG_METADATA(UniformParamsBuffer, (
 bool UniformConstants::Supported()
 {
 	static bool supported = VBO::IsSupported(GL_UNIFORM_BUFFER) && GLAD_GL_ARB_shading_language_420pack; //UBO && UBO layout(binding=x)
+	printf("%s:%i - supported=%i\n", __FILE__, __LINE__);
 	return supported;
 }
 

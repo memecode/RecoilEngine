@@ -712,10 +712,12 @@ bool LuaConstGL::PushEntries(lua_State* L)
 	/*** @field GL.COLOR_ATTACHMENT15_EXT integer */
 	PUSH_GL(COLOR_ATTACHMENT15_EXT);
 
+#if !__APPLE__
 	/*** @field GL.DEPTH_ATTACHMENT_EXT integer */
 	PUSH_GL(DEPTH_ATTACHMENT_EXT);
 	/*** @field GL.STENCIL_ATTACHMENT_EXT integer */
 	PUSH_GL(STENCIL_ATTACHMENT_EXT);
+#endif
 
 	/******************************************************************************
 	 * OpenGL Object Types

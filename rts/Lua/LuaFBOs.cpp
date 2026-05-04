@@ -29,10 +29,12 @@
 
 LuaFBOs::~LuaFBOs()
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	for (const auto* fbo: fbos) {
 		glDeleteFramebuffersEXT(1, &fbo->id);
 	}
+#endif
 }
 
 
@@ -41,6 +43,9 @@ LuaFBOs::~LuaFBOs()
 
 bool LuaFBOs::PushEntries(lua_State* L)
 {
+#if __APPLE__
+	return false;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	CreateMetatable(L);
 
@@ -57,11 +62,15 @@ bool LuaFBOs::PushEntries(lua_State* L)
 		REGISTER_LUA_CFUNC(BlitFBO);
 
 	return true;
+#endif
 }
 
 
 bool LuaFBOs::CreateMetatable(lua_State* L)
 {
+#if __APPLE__
+	return false;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	luaL_newmetatable(L, "FBO");
 	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
@@ -69,6 +78,7 @@ bool LuaFBOs::CreateMetatable(lua_State* L)
 	HSTR_PUSH_CFUNC(L, "__newindex",  meta_newindex);
 	lua_pop(L, 1);
 	return true;
+#endif
 }
 
 
@@ -77,11 +87,13 @@ bool LuaFBOs::CreateMetatable(lua_State* L)
 
 inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (!LuaOpenGL::IsDrawingEnabled(L)) {
 		luaL_error(L, "%s(): OpenGL calls can only be used in Draw() "
 		              "call-ins, or while creating display lists", caller);
 	}
+#endif
 }
 
 
@@ -90,6 +102,7 @@ inline void CheckDrawingEnabled(lua_State* L, const char* caller)
 
 static GLenum GetBindingEnum(GLenum target)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (target) {
 		case GL_FRAMEBUFFER_EXT:      { return GL_FRAMEBUFFER_BINDING_EXT;      }
@@ -97,6 +110,7 @@ static GLenum GetBindingEnum(GLenum target)
 		case GL_READ_FRAMEBUFFER_EXT: { return GL_READ_FRAMEBUFFER_BINDING_EXT; }
 		default: {}
 	}
+#endif
 
 	return 0;
 }
@@ -125,6 +139,7 @@ static GLenum GetBindingEnum(GLenum target)
  
 static GLenum ParseAttachment(const std::string& name)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	switch (hashString(name.c_str())) {
 		case hashString(  "depth"): { return GL_DEPTH_ATTACHMENT  ; } break;
@@ -147,6 +162,7 @@ static GLenum ParseAttachment(const std::string& name)
 		case hashString("color15"): { return GL_COLOR_ATTACHMENT15; } break;
 		default                   : {                               } break;
 	}
+#endif
 
 	return 0;
 }
@@ -157,8 +173,12 @@ static GLenum ParseAttachment(const std::string& name)
 
 const LuaFBOs::LuaFBO* LuaFBOs::GetLuaFBO(lua_State* L, int index)
 {
+#if __APPLE__
+	return nullptr;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	return static_cast<LuaFBO*>(LuaUtils::GetUserData(L, index, "FBO"));
+#endif
 }
 
 
@@ -167,6 +187,7 @@ const LuaFBOs::LuaFBO* LuaFBOs::GetLuaFBO(lua_State* L, int index)
 
 void LuaFBOs::LuaFBO::Init(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	index  = -1u;
 	id     = 0;
@@ -175,11 +196,13 @@ void LuaFBOs::LuaFBO::Init(lua_State* L)
 	xsize = 0;
 	ysize = 0;
 	zsize = 0;
+#endif
 }
 
 
 void LuaFBOs::LuaFBO::Free(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (luaRef == LUA_NOREF)
 		return;
@@ -202,6 +225,7 @@ void LuaFBOs::LuaFBO::Free(lua_State* L)
 		fbos[index]->index = index;
 		fbos.pop_back();
 	}
+#endif
 }
 
 
@@ -210,15 +234,20 @@ void LuaFBOs::LuaFBO::Free(lua_State* L)
 
 int LuaFBOs::meta_gc(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
 	fbo->Free(L);
+#endif
 	return 0;
 }
 
 
 int LuaFBOs::meta_index(lua_State* L)
 {
+#if __APPLE__
+	return 0;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	const auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
 
@@ -230,11 +259,13 @@ int LuaFBOs::meta_index(lua_State* L)
 	lua_pushvalue(L, 2);
 	lua_rawget(L, -2);
 	return 1;
+#endif
 }
 
 
 int LuaFBOs::meta_newindex(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
 
@@ -279,6 +310,8 @@ int LuaFBOs::meta_newindex(lua_State* L)
 	lua_pushvalue(L, 2);
 	lua_pushvalue(L, 3);
 	lua_rawset(L, -3);
+#endif
+
 	return 0;
 }
 
@@ -296,6 +329,9 @@ bool LuaFBOs::AttachObject(
 	GLenum attachTarget,
 	GLenum attachLevel
 ) {
+#if __APPLE__
+	return false;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua_isnil(L, index)) {
 		// nil object
@@ -343,10 +379,12 @@ bool LuaFBOs::AttachObject(
 	fbo->ysize = rbo->ysize;
 	fbo->zsize = 0; //RBO can't be 3D or CUBE_MAP
 	return true;
+#endif
 }
 
 void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLenum texTarget, GLuint texId, GLenum attachID, GLenum attachLevel)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	//  glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, tex.target, texID, 0);
 	switch (texTarget)
@@ -374,6 +412,7 @@ void LuaFBOs::AttachObjectTexTarget(const char* funcName, GLenum fboTarget, GLen
 	} break;
 
 	}
+#endif
 }
 
 
@@ -383,6 +422,9 @@ bool LuaFBOs::ApplyAttachment(
 	LuaFBO* fbo,
 	const GLenum attachID
 ) {
+#if __APPLE__
+	return false;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (attachID == 0)
 		return false;
@@ -410,11 +452,13 @@ bool LuaFBOs::ApplyAttachment(
 	lua_pop(L, 1);
 
 	return success;
+#endif
 }
 
 
 bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua_isnumber(L, index)) {
 		glDrawBuffer((GLenum)lua_toint(L, index));
@@ -427,6 +471,7 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
 		glDrawBuffersARB(count, reinterpret_cast<const GLenum*>(&buffers[0]));
 		return true;
 	}
+#endif
 
 	return false;
 }
@@ -472,6 +517,9 @@ bool LuaFBOs::ApplyDrawBuffers(lua_State* L, int index)
  */
 int LuaFBOs::CreateFBO(lua_State* L)
 {
+#if __APPLE__
+	return 0;
+#else
 	LuaFBO fbo;
 	fbo.Init(L);
 
@@ -537,6 +585,7 @@ int LuaFBOs::CreateFBO(lua_State* L)
 	}
 
 	return 1;
+#endif
 }
 
 
@@ -548,12 +597,14 @@ int LuaFBOs::CreateFBO(lua_State* L)
  */
 int LuaFBOs::DeleteFBO(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua_isnil(L, 1))
 		return 0;
 
 	auto* fbo = static_cast<LuaFBO*>(luaL_checkudata(L, 1, "FBO"));
 	fbo->Free(L);
+#endif
 	return 0;
 }
 
@@ -567,6 +618,7 @@ int LuaFBOs::DeleteFBO(lua_State* L)
  */
 int LuaFBOs::IsValidFBO(lua_State* L)
 {
+#if !__APPLE__
 	if (lua_isnil(L, 1) || !lua_isuserdata(L, 1)) {
 		lua_pushboolean(L, false);
 		return 1;
@@ -596,6 +648,7 @@ int LuaFBOs::IsValidFBO(lua_State* L)
 
 	lua_pushboolean(L, (status == GL_FRAMEBUFFER_COMPLETE_EXT));
 	lua_pushnumber(L, status);
+#endif
 	return 2;
 }
 
@@ -614,6 +667,7 @@ int LuaFBOs::IsValidFBO(lua_State* L)
  */
 int LuaFBOs::ActiveFBO(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	CheckDrawingEnabled(L, __func__);
 	
@@ -670,6 +724,7 @@ int LuaFBOs::ActiveFBO(lua_State* L)
 		LOG_L(L_ERROR, "gl.ActiveFBO: error(%i) = %s", error, lua_tostring(L, -1));
 		lua_error(L);
 	}
+#endif
 
 	return 0;
 }
@@ -692,6 +747,9 @@ int LuaFBOs::ActiveFBO(lua_State* L)
  */
 int LuaFBOs::RawBindFBO(lua_State* L)
 {
+#if __APPLE__
+	return 0;
+#else
 	RECOIL_DETAILED_TRACY_ZONE;
 	//CheckDrawingEnabled(L, __func__);
 
@@ -712,6 +770,7 @@ int LuaFBOs::RawBindFBO(lua_State* L)
 
 	lua_pushnumber(L, currentFBO);
 	return 1;
+#endif
 }
 
 
@@ -749,6 +808,7 @@ int LuaFBOs::RawBindFBO(lua_State* L)
  */
 int LuaFBOs::BlitFBO(lua_State* L)
 {
+#if !__APPLE__
 	RECOIL_DETAILED_TRACY_ZONE;
 	if (lua_israwnumber(L, 1)) {
 		const GLint x0Src = (GLint)luaL_checknumber(L, 1);
@@ -800,6 +860,7 @@ int LuaFBOs::BlitFBO(lua_State* L)
 	glBlitFramebufferEXT(x0Src, y0Src, x1Src, y1Src,  x0Dst, y0Dst, x1Dst, y1Dst,  mask, filter);
 
 	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, currentFBO);
+#endif
 	return 0;
 }
 
@@ -831,6 +892,7 @@ namespace Impl {
 
 int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 {
+#if !__APPLE__
 	const auto ReportErrorAndReturn = [L](const char* errMsg = "", const char* func = __func__) {
 		LOG_L(L_ERROR, "[gl.%s] Error: %s", func, errMsg);
 		lua_pushboolean(L, false);
@@ -953,6 +1015,7 @@ int LuaFBOs::ClearAttachmentFBO(lua_State* L)
 	assert(glGetError() == GL_NO_ERROR);
 
 	lua_pushboolean(L, true);
+#endif
 	return 1;
 }
 

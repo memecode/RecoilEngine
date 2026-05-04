@@ -32,7 +32,7 @@ public:
 	void MoveView(int x, int y) { MoveView(GetMapPosition(x, y)); }
 	bool IsAbove(int x, int y);
 	bool IsInside(int x, int y);
-	std::string GetTooltip(int x, int y);
+	std::string GetTooltip(int x, int y) override;
 	void Draw() override;
 	void DrawForReal(bool useNormalizedCoors = true, bool updateTex = false, bool luaCall = false);
 	void Update();

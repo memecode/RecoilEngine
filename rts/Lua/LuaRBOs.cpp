@@ -18,9 +18,11 @@
 
 LuaRBOs::~LuaRBOs()
 {
+#if !__APPLE__
 	for (const RBO* rbo: rbos) {
 		glDeleteRenderbuffersEXT(1, &rbo->id);
 	}
+#endif
 }
 
 
@@ -29,23 +31,31 @@ LuaRBOs::~LuaRBOs()
 
 bool LuaRBOs::PushEntries(lua_State* L)
 {
+#if __APPLE__
+	return false;
+#else
 	CreateMetatable(L);
 
 	REGISTER_LUA_CFUNC(CreateRBO);
 	REGISTER_LUA_CFUNC(DeleteRBO);
 
 	return true;
+#endif
 }
 
 
 bool LuaRBOs::CreateMetatable(lua_State* L)
 {
+#if __APPLE__
+	return false;
+#else
 	luaL_newmetatable(L, "RBO");
 	HSTR_PUSH_CFUNC(L, "__gc",        meta_gc);
 	HSTR_PUSH_CFUNC(L, "__index",     meta_index);
 	HSTR_PUSH_CFUNC(L, "__newindex",  meta_newindex);
 	lua_pop(L, 1);
 	return true;
+#endif
 }
 
 
@@ -54,7 +64,11 @@ bool LuaRBOs::CreateMetatable(lua_State* L)
 
 const LuaRBOs::RBO* LuaRBOs::GetLuaRBO(lua_State* L, int index)
 {
+#if __APPLE__
+	return nullptr;
+#else
 	return static_cast<RBO*>(LuaUtils::GetUserData(L, index, "RBO"));
+#endif
 }
 
 
@@ -63,6 +77,9 @@ const LuaRBOs::RBO* LuaRBOs::GetLuaRBO(lua_State* L, int index)
 
 void LuaRBOs::RBO::Init()
 {
+#if __APPLE__
+	assert(!"not implemented.");
+#else
 	index   = -1u;
 	id      = 0;
 
@@ -72,11 +89,13 @@ void LuaRBOs::RBO::Init()
 	xsize   = 0;
 	ysize   = 0;
 	samples = 0;
+#endif
 }
 
 
 void LuaRBOs::RBO::Free(lua_State* L)
 {
+#if !__APPLE__
 	if (id == 0)
 		return;
 
@@ -95,6 +114,7 @@ void LuaRBOs::RBO::Free(lua_State* L)
 		rbos[index]->index = index;
 		rbos.pop_back();
 	}
+#endif
 }
 
 
@@ -103,14 +123,17 @@ void LuaRBOs::RBO::Free(lua_State* L)
 
 int LuaRBOs::meta_gc(lua_State* L)
 {
+#if !__APPLE__
 	RBO* rbo = static_cast<RBO*>(luaL_checkudata(L, 1, "RBO"));
 	rbo->Free(L);
+#endif
 	return 0;
 }
 
 
 int LuaRBOs::meta_index(lua_State* L)
 {
+#if !__APPLE__
 	const RBO* rbo = static_cast<RBO*>(luaL_checkudata(L, 1, "RBO"));
 
 	switch (hashString(luaL_checkstring(L, 2))) {
@@ -122,7 +145,7 @@ int LuaRBOs::meta_index(lua_State* L)
 		case hashString("samples"): { lua_pushnumber(L, rbo->samples);                  return 1; } break;
 		default                   : {                                                             } break;
 	}
-
+#endif
 	return 0;
 }
 
@@ -164,6 +187,7 @@ int LuaRBOs::meta_newindex(lua_State* L)
  */
 int LuaRBOs::CreateRBO(lua_State* L)
 {
+#if !__APPLE__
 	RBO rbo;
 	rbo.Init();
 
@@ -226,7 +250,7 @@ int LuaRBOs::CreateRBO(lua_State* L)
 		rbos.push_back(rboPtr);
 		rboPtr->index = rbos.size() - 1;
 	}
-
+#endif
 	return 1;
 }
 
@@ -237,11 +261,13 @@ int LuaRBOs::CreateRBO(lua_State* L)
  */
 int LuaRBOs::DeleteRBO(lua_State* L)
 {
+#if !__APPLE__
 	if (lua_isnil(L, 1)) {
 		return 0;
 	}
 	RBO* rbo = static_cast<RBO*>(luaL_checkudata(L, 1, "RBO"));
 	rbo->Free(L);
+#endif
 	return 0;
 }
 

@@ -9,7 +9,7 @@ class CFeature;
 
 class CGeoThermSmokeProjectile : public CSmokeProjectile
 {
-	CR_DECLARE(CGeoThermSmokeProjectile)
+	CR_DECLARE_DERIVED(CGeoThermSmokeProjectile)
 public:
 	CGeoThermSmokeProjectile() { }
 	CGeoThermSmokeProjectile(

@@ -30,7 +30,11 @@ GLsizei FBO::maxSamples = -1;
  */
 bool FBO::IsSupported()
 {
+#if __APPLE__
+	return false;
+#else
 	return (GLAD_GL_EXT_framebuffer_object);
+#endif
 }
 
 bool FBO::IsReady()

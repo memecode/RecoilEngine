@@ -43,7 +43,7 @@
 # 3) Add libassimp using the file lists (eliminates duplication of file names between
 #    source groups and library command)
 #
-cmake_minimum_required( VERSION 3.5 )
+cmake_minimum_required( VERSION 3.20 )
 SET( HEADER_PATH ../include/assimp )
 
 SET( COMPILER_HEADERS

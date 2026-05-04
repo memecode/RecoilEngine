@@ -6,7 +6,9 @@
 #else
 #include <sched.h>
 #include <unistd.h>
-#include <syscall.h>
+#ifndef __APPLE__
+	#include <syscall.h>
+#endif
 #endif
 
 // Constructor: Saves the current thread's affinity
@@ -18,7 +20,7 @@ ThreadAffinityGuard::ThreadAffinityGuard() : affinitySaved(false) {
 	if (!affinitySaved) {
 		LOG_L(L_WARNING, "GetThreadAffinityMask failed with error code: %lu", GetLastError());
 	}
-#else
+#elif !defined(__APPLE__)
 	tid = syscall(SYS_gettid);  // Get thread ID
 	CPU_ZERO(&savedAffinity);
 	if (sched_getaffinity(tid, sizeof(cpu_set_t), &savedAffinity) == 0) {
@@ -36,7 +38,7 @@ ThreadAffinityGuard::~ThreadAffinityGuard() {
 		if (!SetThreadAffinityMask(threadHandle, savedAffinity)) {
 			LOG_L(L_WARNING, "SetThreadAffinityMask failed with error code: %lu", GetLastError());
 		}
-#else
+#elif !defined(__APPLE__)
 		if (sched_setaffinity(tid, sizeof(cpu_set_t), &savedAffinity) != 0) {
 			LOG_L(L_WARNING, "Failed to restore thread affinity.");
 		}

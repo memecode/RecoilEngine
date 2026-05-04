@@ -43,15 +43,17 @@ SET(luaSources
 ADD_LIBRARY(lua STATIC EXCLUDE_FROM_ALL ${luaSources})
 
 if (ENABLE_STREFLOP)
-TARGET_LINK_LIBRARIES(lua streflop)
+	TARGET_LINK_LIBRARIES(lua streflop)
 else ()
-TARGET_LINK_LIBRARIES(lua)
+	TARGET_LINK_LIBRARIES(lua)
 endif ()
 
 target_include_directories(lua PUBLIC include)
 
-if (UNIX)
+if(APPLE)
+	target_link_libraries(lua openglonmetal)
+elseif(UNIX)
 	SET_TARGET_PROPERTIES(lua PROPERTIES COMPILE_FLAGS "-DLUA_USE_MKSTEMP ${PIC_FLAG}")
-else (UNIX)
+else()
 	SET_TARGET_PROPERTIES(lua PROPERTIES COMPILE_FLAGS "${PIC_FLAG}")
-endif (UNIX)
+endif()

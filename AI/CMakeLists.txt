@@ -11,6 +11,13 @@
 
 add_definitions(-DBUILDING_AI)
 
+if(APPLE)
+	enable_language(ASM)
+	set(CMAKE_ASM_COMPILER /opt/local/bin/as)
+	set(CMAKE_ASM_EXTENSIONS "S")
+	message("CMAKE_ASM_COMPILER=${CMAKE_ASM_COMPILER}")
+	message("CMAKE_ASM_EXTENSIONS=${CMAKE_ASM_EXTENSIONS}")
+endif()
 
 ### User-definable build options
 set (AI_EXCLUDE_REGEX "XXXXXXXX" CACHE STRING "Which Skirmish AIs not to build (none by default, example: \"NTai|Null.*AI\", see also: AI_TYPES")

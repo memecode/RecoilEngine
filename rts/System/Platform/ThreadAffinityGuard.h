@@ -12,7 +12,7 @@ private:
 #ifdef _WIN32
 	DWORD_PTR savedAffinity;
 	HANDLE threadHandle;
-#else
+#elif !__APPLE__
 	cpu_set_t savedAffinity;
 	pid_t tid;
 #endif

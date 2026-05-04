@@ -41,10 +41,17 @@ if    (NOT NO_SOUND)
 			OpenAL/SoundBuffer.cpp
 			OpenAL/SoundItem.cpp
 			OpenAL/SoundSource.cpp
-			OpenAL/VorbisShared.cpp
-		)
+			OpenAL/VorbisShared.cpp)
 
-	find_package_static(OpenAL 1.18.2 REQUIRED)
+	if (APPLE)
+		get_filename_component(ROOT_PATH "${CMAKE_CURRENT_LIST_DIR}/../../../.." ABSOLUTE)
+		message("ROOT_PATH=${ROOT_PATH}")
+		add_subdirectory(${ROOT_PATH}/openal-soft openal_dir)
+		include_directories(${ROOT_PATH}/MGL/MGL/include)
+	else()
+		find_package_static(OpenAL 1.18.2 REQUIRED)
+	endif()
+
 	find_package_static(OggVorbis 1.3.4 REQUIRED)
 
 	find_package(SDL2 MODULE REQUIRED)
@@ -55,7 +62,15 @@ if    (NOT NO_SOUND)
 	add_library(sound STATIC EXCLUDE_FROM_ALL ${soundSources})
 	target_link_libraries(sound SDL2::SDL2)
 	target_link_libraries(sound vorbis::vorbisfile vorbis::vorbis Ogg::ogg)
-	target_link_libraries(sound OpenAL::OpenAL)
+	if (APPLE)
+		if (NOT TARGET OpenAL)
+			message(FATAL_ERROR "OpenAL not a target!")
+		endif()
+		target_link_libraries(sound OpenAL)
+		target_include_directories(sound PUBLIC "${OPENAL_PATH}/include")
+	else()
+		target_link_libraries(sound OpenAL::OpenAL)
+	endif()
 	target_link_libraries(sound Tracy::TracyClient)
 	target_link_libraries(sound nowide::nowide)
 endif (NOT NO_SOUND)

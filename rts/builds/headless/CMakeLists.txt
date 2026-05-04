@@ -76,6 +76,16 @@ if    (MINGW)
 	set_target_properties(engine-headless PROPERTIES LINK_FLAGS "-Wl,-subsystem,console")
 endif (MINGW)
 
+if(APPLE)
+	target_include_directories(engine-headless PRIVATE "/opt/homebrew/Cellar/devil/1.8.0_6/include")
+	target_link_libraries(engine-headless openglonmetal)
+
+	# this configures 'GlobalRendering.cpp' to build as objective C++ so that it can
+	# attach the metal view to the SDL window.
+	set_source_files_properties(../../Rendering/GlobalRendering.cpp
+							PROPERTIES 
+								COMPILE_FLAGS "-x objective-c++")
+endif()
 
 ### Install the executable
 install(TARGETS engine-headless DESTINATION ${BINDIR})

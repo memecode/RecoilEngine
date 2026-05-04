@@ -29,10 +29,17 @@ find_package(SDL2 MODULE REQUIRED)
 
 
 set(engineLibraries SDL2::SDL2)
+set(engineLibraryPaths)
 
-set(OpenGL_GL_PREFERENCE LEGACY)
-find_package_static(OpenGL 3.0 REQUIRED)
-list(APPEND engineLibraries OpenGL::GL)
+if(APPLE)
+	get_filename_component(MGL_DIR ${CMAKE_CURRENT_LIST_DIR}/../../../../MGL ABSOLUTE)
+	list(APPEND engineLibraries openglonmetal)	
+	list(APPEND engineLibraryPaths ${MGL_DIR}/build)
+else()
+	set(OpenGL_GL_PREFERENCE LEGACY)
+	find_package_static(OpenGL 3.0 REQUIRED)
+	list(APPEND engineLibraries OpenGL::GL)
+endif()
 
 find_fontconfig_hack()
 find_package_static(Fontconfig 2.11 REQUIRED)
@@ -52,6 +59,7 @@ list(APPEND engineLibraries Freetype::Freetype)
 if (APPLE)
 	find_library(COREFOUNDATION_LIBRARY Foundation)
 	list(APPEND engineLibraries ${COREFOUNDATION_LIBRARY})
+	target_link_libraries(Game PRIVATE openglonmetal)
 elseif (UNIX)
 	find_package(X11 REQUIRED)
 	target_link_libraries(Game PRIVATE X11::Xcursor)
@@ -70,7 +78,14 @@ list(APPEND engineLibraries pr-downloader)
 list(APPEND engineLibraries RmlUi::Core)
 list(APPEND engineLibraries RmlUi::Debugger)
 list(APPEND engineLibraries lunasvg)
-list(APPEND engineLibraries glad)
+if(APPLE)
+	if(NOT TARGET openglonmetal)
+		message(FATAL_ERROR "openglonmetal should be a target")
+	endif()
+	list(APPEND engineLibraries openglonmetal)
+else()
+	list(APPEND engineLibraries glad)
+endif()
 
 ### Assemble external include dirs
 list(APPEND engineIncludes ${ENGINE_SRC_ROOT_DIR}/lib/asio/include)
@@ -82,6 +97,7 @@ include_directories(${engineIncludes})
 ### Build the executable
 add_executable(engine-legacy ${EXE_FLAGS} ${engineSources} ${ENGINE_ICON} ${engineHeaders})
 target_link_libraries(engine-legacy ${engineLibraries} Game)
+target_link_directories(engine-legacy PRIVATE ${engineLibraryPaths})
 
 # Export symbols for plugin access (replaces CMP0065 OLD behavior)
 set_target_properties(engine-legacy PROPERTIES ENABLE_EXPORTS TRUE)
@@ -90,6 +106,23 @@ if(MSVC)
     target_link_libraries(engine-legacy engine-natvis)
 endif()
 
+if(APPLE)
+	target_include_directories(engine-legacy
+		PRIVATE
+			/opt/homebrew/Cellar/devil/1.8.0_6/include)
+	if (NOT TARGET openglonmetal)
+		message(FATAL_ERROR "openglonmetal should be a target...")
+	endif()
+	target_link_libraries(engine-legacy openglonmetal)
+
+	# this configures 'GlobalRendering.cpp' to build as objective C++ so that it can
+	# attach the metal view to the SDL window.
+	set_source_files_properties(../../Rendering/GlobalRendering.cpp
+							PROPERTIES 
+								COMPILE_FLAGS "-x objective-c++")
+
+	message("set GlobalRendering.cpp to obj-c++")
+endif()
 
 ### Install the executable
 install(TARGETS engine-legacy DESTINATION ${BINDIR})

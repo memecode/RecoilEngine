@@ -19,6 +19,12 @@
 
 bool LuaConstPlatform::PushEntries(lua_State* L)
 {
+	if (!globalRenderingInfo.gpuName)
+	{
+		printf("%s:%i - ERROR: globalRenderingInfo not initialized?\n", __FILE__, __LINE__);
+		return false;
+	}
+
 	/*** @field Platform.gpu string Full GPU device name */
 	LuaPushNamedString(L, "gpu", globalRenderingInfo.gpuName);
 	/*** @field Platform.gpuVendor "Nvidia"|"Intel"|"ATI"|"Mesa"|"Unknown" */

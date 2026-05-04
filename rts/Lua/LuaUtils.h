@@ -281,6 +281,14 @@ static inline void LuaPushNamedChar(lua_State* L, char const *name, char value)
 
 static inline void LuaPushNamedString(lua_State* L, const string& key, const string& value)
 {
+	if (key.empty() || value.empty())
+	{
+		printf("%s:%i - ERROR: invalid param: %s=%s\n", __FILE__, __LINE__,
+			key.empty() ? "null" : key.c_str(),
+			value.empty() ? "null" : value.c_str());
+		return;
+	}
+
 	lua_pushsstring(L, key);
 	lua_pushsstring(L, value);
 	lua_rawset(L, -3);

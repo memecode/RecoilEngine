@@ -214,7 +214,10 @@ CR_REG_METADATA(CGlobalRendering, (
 	CR_IGNORED(forceDWMFlush),
 
 	CR_IGNORED(sdlWindow),
+	#ifdef __APPLE__
+	#else
 	CR_IGNORED(glContext),
+	#endif
 
 	CR_IGNORED(glExtensions),
 	CR_IGNORED(glTimerQueries)
@@ -343,7 +346,11 @@ CGlobalRendering::CGlobalRendering()
 	, underExternalDebug(false)
 	, forceDWMFlush(configHandler->GetInt("DWMFlush"))
 	, sdlWindow{nullptr}
+	#ifdef __APPLE__
+	, metalView{nullptr}
+	#else
 	, glContext{nullptr}
+	#endif
 	, glExtensions{}
 	, glTimerQueries{0}
 {
@@ -377,10 +384,13 @@ CGlobalRendering::~CGlobalRendering()
 	configHandler->RemoveObserver(this);
 	verticalSync->WrapRemoveObserver();
 
+	#ifdef __APPLE__
+	#else
 	// protect against aborted startup
 	if (glContext) {
 		glDeleteQueries(glTimerQueries.size(), glTimerQueries.data());
 	}
+	#endif
 
 	DestroyWindowAndContext();
 	KillSDL();
@@ -425,18 +435,28 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 	//   SDL_WINDOW_FULLSCREEN_DESKTOP for "fake" fullscreen that takes the size of the desktop;
 	//   and 0 for windowed mode.
 
-	uint32_t sdlFlags  = (SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
-	         sdlFlags |= (borderless_ ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen_;
-	         sdlFlags |= (SDL_WINDOW_BORDERLESS * borderless_);
+#if __APPLE__
+	// FIXME: This is more for debugging, remove later?
+	borderless_ = false;
 
-	for (size_t i = 0; i < (aaLvls.size()) && (newWindow == nullptr); i++) {
+	// switch off opengl here.. we'll use metal
+	uint32_t sdlFlags = SDL_WINDOW_RESIZABLE;
+#else
+	uint32_t sdlFlags = SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE;
+#endif
+		sdlFlags |= (borderless_ ? SDL_WINDOW_FULLSCREEN_DESKTOP : SDL_WINDOW_FULLSCREEN) * fullScreen_;
+		sdlFlags |= (SDL_WINDOW_BORDERLESS * borderless_);
+
+	for (size_t i = 0; i < (aaLvls.size()) && (newWindow == nullptr); i++)
+	{
 		if (i > 0 && aaLvls[i] == aaLvls[i - 1])
 			break;
 
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, aaLvls[i] > 0);
 		SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, aaLvls[i]    );
 
-		for (size_t j = 0; j < (zbBits.size()) && (newWindow == nullptr); j++) {
+		for (size_t j = 0; j < (zbBits.size()) && (newWindow == nullptr); j++)
+		{
 			SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, zbBits[j]);
 
 			if ((newWindow = SDL_CreateWindow(title, winPosX_, winPosY_, newRes.x, newRes.y, sdlFlags)) == nullptr) {
@@ -461,6 +481,9 @@ SDL_Window* CGlobalRendering::CreateSDLWindow(const char* title) const
 
 SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 {
+	#if __APPLE__
+	return nullptr;
+	#else
 	SDL_GLContext newContext = nullptr;
 
 	constexpr int2 glCtxs[] = {{2, 0}, {2, 1},  {3, 0}, {3, 1}, {3, 2}, {3, 3},  {4, 0}, {4, 1}, {4, 2}, {4, 3}, {4, 4}, {4, 5}, {4, 6}};
@@ -513,6 +536,7 @@ SDL_GLContext CGlobalRendering::CreateGLContext(const int2& minCtx)
 
 	// should never fail at this point
 	return (newContext = SDL_GL_CreateContext(sdlWindow));
+	#endif
 }
 
 bool CGlobalRendering::CreateWindowAndContext(const char* title)
@@ -521,6 +545,10 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		LOG_L(L_FATAL, "[GR::%s] error \"%s\" initializing SDL", __func__, SDL_GetError());
 		return false;
 	}
+
+	#if __APPLE__
+	SDL_SetHint(SDL_HINT_RENDER_DRIVER, "metal");
+	#endif
 
 	if (!CheckAvailableVideoModes()) {
 		handleerror(nullptr, "desktop color-depth should be at least 24 bits per pixel, aborting", "ERROR", MBF_OK | MBF_EXCL);
@@ -584,6 +612,50 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 		WindowManagerHelper::BlockCompositing(sdlWindow);
 #endif
 
+#if __APPLE__
+
+	/*
+	metalView = SDL_Metal_CreateView(sdlWindow);
+	printf("SDL_Metal_CreateView=%p\n", metalView);
+	if (!metalView)
+		return false;
+	*/
+
+	#ifndef __OBJC__
+	#error "This needs to be compiled as objective c++"
+	#endif
+
+	SDL_SysWMinfo info;
+	SDL_VERSION(&info.version);
+
+	if (!SDL_GetWindowWMInfo(sdlWindow, &info))
+	{
+	 	printf("%s:%i - Error: SDL_GetWindowWMInfo failed, sdlWindow=%p, err=%s\n",
+				__FILE__, __LINE__, sdlWindow, SDL_GetError());
+	}
+	else if (info.subsystem != SDL_SYSWM_COCOA)
+	{
+	 	printf("%s:%i - Error: info.subsystem=%i\n", __FILE__, __LINE__, info.subsystem);
+	}
+	else
+	{
+        auto nsWindow = (__bridge NSWindow *)info.info.cocoa.window;
+		if (nsWindow)
+		{
+			glmCtx = createGLMContext(GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV, GL_DEPTH_COMPONENT, GL_FLOAT, 0, 0);
+
+			printf("%s:%i - calling CppCreateMGLRendererFromContextAndBindToWindow...\n", __FILE__, __LINE__);
+			CppCreateMGLRendererFromContextAndBindToWindow(glmCtx, nsWindow);
+			MGLsetCurrentContext(glmCtx);
+    		// glfwSetWindowUserPointer(nsWindow, glmCtx);
+		}
+		else
+		{
+			printf("%s:%i - Error: failed to get NSWindow from SDL\n", __FILE__, __LINE__);
+		}
+	}
+
+#else
 	if ((glContext = CreateGLContext(minCtx)) == nullptr)
 		return false;
 
@@ -604,13 +676,18 @@ bool CGlobalRendering::CreateWindowAndContext(const char* title)
 	}
 
 	MakeCurrentContext(false);
+#endif
+
 	SDL_DisableScreenSaver();
 	return true;
 }
 
 
 void CGlobalRendering::MakeCurrentContext(bool clear) const {
+	#ifdef __APPLE__
+	#else
 	SDL_GL_MakeCurrent(sdlWindow, clear ? nullptr : glContext);
+	#endif
 }
 
 
@@ -624,13 +701,17 @@ void CGlobalRendering::DestroyWindowAndContext() {
 	SDL_GL_MakeCurrent(sdlWindow, nullptr);
 	SDL_DestroyWindow(sdlWindow);
 
-	#if !defined(HEADLESS)
+	#if !defined(HEADLESS) && !defined(__APPLE__)
 	if (glContext)
 		SDL_GL_DeleteContext(glContext);
 	#endif
 
 	sdlWindow = nullptr;
+	#ifdef __APPLE__
+	metalView = nullptr;
+	#else
 	glContext = nullptr;
+	#endif
 
 	GLX::Unload();
 }
@@ -645,6 +726,7 @@ void CGlobalRendering::KillSDL() const {
 }
 
 void CGlobalRendering::PostInit() {
+
 	// glewInit sets GL_INVALID_ENUM, get rid of it
 	glGetError();
 
@@ -813,6 +895,7 @@ void CGlobalRendering::SetGLSupportFlags()
 	const std::string& glRenderer = StringToLower(globalRenderingInfo.glRenderer);
 	const std::string& glVersion = StringToLower(globalRenderingInfo.glVersion);
 
+	printf("%s:%i - glGetString(GL_SHADING_LANGUAGE_VERSION)=%s\n", __FILE__, __LINE__, glGetString(GL_SHADING_LANGUAGE_VERSION));
 	bool haveGLSL  = (glGetString(GL_SHADING_LANGUAGE_VERSION) != nullptr);
 	haveGLSL &= static_cast<bool>(GLAD_GL_ARB_vertex_shader && GLAD_GL_ARB_fragment_shader);
 	haveGLSL &= static_cast<bool>(GLAD_GL_VERSION_2_0); // we want OpenGL 2.0 core functions
@@ -1222,6 +1305,12 @@ void CGlobalRendering::SetWindowAttributes(SDL_Window* window)
 	fullScreen = configHandler->GetBool("Fullscreen");
 	winPosX = configHandler->GetInt("WindowPosX");
 	winPosY = configHandler->GetInt("WindowPosY");
+
+#if __APPLE__
+	borderless = FALSE;
+#endif
+
+	printf("borderless=%i, fullScreen=%i, winPos=%i,%i\n", borderless, fullScreen, winPosX, winPosY);
 
 	// update display count
 	numDisplays = SDL_GetNumVideoDisplays();

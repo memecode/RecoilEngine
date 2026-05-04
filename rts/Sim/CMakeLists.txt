@@ -158,6 +158,7 @@ add_library(engineSim STATIC
 	)
 
 target_link_libraries(engineSim SDL2::SDL2 Tracy::TracyClient nowide::nowide fmt::fmt)
+# set_property(TARGET engineSim PROPERTY CXX_STANDARD 23)
 
 if(ENABLE_STREFLOP)
 	target_link_libraries(engineSim streflop)
@@ -173,4 +174,8 @@ if( CMAKE_COMPILER_IS_GNUCXX)
 	endif()
 else()
 	make_global_var(SPRING_SIM_LIBRARIES engineSim)
+endif()
+
+if (APPLE)
+	target_link_libraries(engineSim openglonmetal)
 endif()

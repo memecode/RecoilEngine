@@ -107,11 +107,15 @@ if (WIN32)
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/WinVersion.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/SharedLib.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Win/DllLib.cpp")
-else (WIN32)
+elseif (APPLE)
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Mac/CpuTopology.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Mac/Hardware.cpp")
+	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
+elseif (UNIX)
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/CpuTopology.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/Hardware.cpp")
 	list(APPEND main_files "${ENGINE_SRC_ROOT}/System/Platform/Linux/ThreadSupport.cpp")
-endif (WIN32)
+endif ()
 
 set(unitsync_files
 	${sources_engine_System_FileSystem}
@@ -138,6 +142,9 @@ target_link_libraries(unitsync ${unitsync_libs} ${unitsync_lib_flags})
 if (MINGW)
 	set_target_properties(unitsync PROPERTIES LINK_FLAGS -Wl,--add-stdcall-alias)
 endif (MINGW)
+if (APPLE)
+	target_link_libraries(unitsync openglonmetal)
+endif()
 fix_lib_name(unitsync)
 
 install (TARGETS unitsync

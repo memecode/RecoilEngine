@@ -483,6 +483,7 @@ private:
 	std::vector<GLsync> fences;
 };
 
+#if !__APPLE__
 template<typename T>
 class PinnedMemoryAMDImpl : public IStreamBuffer<T> {
 public:
@@ -553,6 +554,7 @@ private:
 
 	static constexpr uint32_t ALIGN_PINNED_MEMORY_SIZE = 4096;
 };
+#endif
 
 //////////////////////////////////////////////////////////////////////
 
@@ -572,8 +574,10 @@ inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(IStrea
 		return std::make_unique<MapAndSyncImpl<T>>(p);
 	case SB_PERSISTENTMAP:
 		return std::make_unique<PersistentMapImpl<T>>(p);
+#if !__APPLE__
 	case SB_PINNEDMEMAMD:
 		return std::make_unique<PinnedMemoryAMDImpl<T>>(p);
+#endif
 	default: {} break;
 	}
 
@@ -582,6 +586,7 @@ inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(IStrea
 		return CreateInstance(p);
 	}
 
+#if !__APPLE__
 	if (GLAD_GL_ARB_sync) {
 		if (globalRendering->haveAMD) {
 			p.type = SB_PINNEDMEMAMD;
@@ -596,6 +601,7 @@ inline std::unique_ptr<IStreamBuffer<T>> IStreamBuffer<T>::CreateInstance(IStrea
 		p.type = SB_MAPANDSYNC;
 		return CreateInstance(p);
 	}
+#endif
 
 	//seems like sensible default
 	p.type = SB_BUFFERSUBDATA;
